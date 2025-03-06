@@ -55,17 +55,55 @@ function createTaskElement(todo: Todo): HTMLElement {
 
   todoDiv.appendChild(detailsDiv);
 
+  const statusDiv = getStatusDiv(todo);
+
+  todoDiv.appendChild(statusDiv);
+
+  return todoDiv;
+}
+
+const getStatusDiv = (todo : Todo) : HTMLDivElement => {
   const statusDiv = document.createElement('div');
+  statusDiv.className = "p-1 flex gap-2 items-center";
+
+  const leftButton = document.createElement("span");
+  leftButton.className="font-bold text-lg cursor-pointer hover:bg-gray-300 hover:rounded-full transition-all duration-100 px-2 pt-0 pb-1";
+  leftButton.textContent = "<";
+  leftButton.addEventListener("click", (ev) => handleChangeStatus(ev, "left"));
+  statusDiv.appendChild(leftButton);
 
   const statusSpan = document.createElement('span');
   statusSpan.className = `inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusBadgeColor(todo.status)}`;
   statusSpan.textContent = getStatusName(todo.status);
   statusDiv.appendChild(statusSpan);
 
-  todoDiv.appendChild(statusDiv);
+  const rightButton = document.createElement("span");
+  rightButton.className= "font-bold text-lg cursor-pointer hover:bg-gray-300 hover:rounded-full transition-all duration-100 px-2 pt-0 pb-1";
+  rightButton.textContent = ">";
+  rightButton.addEventListener("click", (ev) => handleChangeStatus(ev, "right"));
+  statusDiv.appendChild(rightButton);
 
-  return todoDiv;
+  return statusDiv;
 }
+
+const handleChangeStatus = (ev : Event, buttonType : ("left" | "right")) => { 
+  const currentButton = ev.target as HTMLElement;
+  const parentDiv = currentButton.parentElement as HTMLElement;
+  let statusElement : HTMLElement;
+  statusElement = parentDiv.querySelector("span:nth-child(2)") as HTMLElement; //gets the 2nd span element
+  let currentStatus = getStatusEnum(statusElement.textContent as ("Not Started" | "In Progress" | "Finished"))
+  let classColors = getStatusBadgeColor(currentStatus).split(" ");
+
+  statusElement.classList.remove(classColors[0])
+  statusElement.classList.remove(classColors[1])
+  if(buttonType === "left") currentStatus = (currentStatus - 1 + 3) % 3;
+  else currentStatus = (currentStatus + 1) % 3;
+  statusElement.classList.add(...getStatusBadgeColor(currentStatus).split(" "));
+  statusElement.textContent = getStatusName(currentStatus);
+
+
+  
+};
 
 const deleteToDoItem = (ev : Event) => {
   let button = ev.target as HTMLElement;
@@ -116,6 +154,17 @@ function getStatusName(status: Status) : string {
   }
 }
 
+function getStatusEnum(statusName : ("Not Started" | "In Progress" | "Finished")) : Status{
+  switch(statusName) {
+    case "Not Started":
+      return Status.NOT_STARTED
+    case "In Progress": 
+      return Status.IN_PROGRESS;
+    default:
+      return Status.FINISHED;
+  }
+}
+
 function getStatusBadgeColor(status: Status): string {
   switch (status) {
     case Status.FINISHED:
@@ -131,3 +180,18 @@ function getStatusBadgeColor(status: Status): string {
 
 
 form.addEventListener("submit", handler);
+
+const allCloseButtons = document.getElementsByClassName("closeButton");
+Array.from(allCloseButtons).forEach((buttonElement) => {
+  buttonElement.addEventListener("click", deleteToDoItem);
+});
+
+const allLeftButtons = document.getElementsByClassName("leftButton");
+Array.from(allLeftButtons).forEach((leftButt) => {
+  leftButt.addEventListener("click", (ev) => handleChangeStatus(ev, "left"));
+});
+
+const allRightButtons = document.getElementsByClassName("rightButton");
+Array.from(allRightButtons).forEach((rightButt) => {
+  rightButt.addEventListener("click", (ev) => handleChangeStatus(ev, "right"));
+})
